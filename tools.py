@@ -1,36 +1,20 @@
-import functools
+import logging
+import random
 
-from .settings import TIME_FACTOR
-from .items import (
-    Robot, Foo, Bar, FooBar
+from settings import (
+    FOOBAR_PRICE,
+)
+from mixins import (
+    TaskMixin,
+    spend_time,
+)
+from items import (
+    Robot, Foo,
+    Bar, FooBar,
 )
 
 
-def spend_time(f):
-    @functools.wraps
-    def wrapper(obj, *args, **kwargs):
-        time.sleep(obj.time_needed * TIME_FACTOR)
-        return f(obj, *args, **kwargs)
-    return wrapper
-
-
-class TaskMixin(object):
-    def __init__(
-        self,
-        time_needed=None,
-        product_type=None,
-        factory=None,
-    ):
-        self.time_needed = time_needed
-        self.cls = product_type
-        self.factory = factory
-   
-    @spend_time
-    def do_task(factory=None):
-        """This is the default implementation."""
-        (factory or self.factory).store(
-            **{self.cls.__name__: self.cls()}
-        )
+logger = logging.getLogger(__name__)
 
 
 class MakeFoo(TaskMixin):
@@ -51,63 +35,60 @@ class MakeBar(TaskMixin):
         )
 
 
-class MakeRobot(TaskMixin):
-    def __init__(self, factory=None):
-        super(MakeRobot, self).__init__(
+class BuyRobot(TaskMixin):
+    def __init__(self, factory=None, robot=None):
+        super(BuyRobot, self).__init__(
             time_needed=0,
             product_type=Robot,
             factory=factory,
         )
+        self.robot = robot
 
     @spend_time
-    def do_task(factory=None):
-        factory = factory or self.factory
-        if factory.can_make_robot():
-            robot = factory.do_robot()
-            factory.store(robot=robot)
-        else:
-            raise ValueError(
-                "You can't produce a robot: stock is too low;"
-                "money={}, foo={}".format(MONEY, len(FOO_STACK))            )
+    def do_task(self):
+        self.factory.store(robot=self.robot)
 
 
 class MakeFooBar(TaskMixin):
-    def __init__(self, factory=None):
+    def __init__(self, factory=None, foo=None, bar=None):
         super(MakeFooBar, self).__init__(
             time_needed=2.,
             product_type=FooBar,
             factory=factory
         )
+        self.foo = foo
+        self.bar = bar
 
     @spend_time
-    def do_task(factory=None):
+    def do_task(self, factory=None):
         factory = factory or self.factory
-        foo = factory.get_foo()
-        bar = factory.get_bar()
+        bar = self.bar
+        foo = self.foo
         if random.random() > 0.4:
-            factory.store(foobar=FooBar(foo, bar))
+            factory.store(
+                foobar=FooBar(
+                    factory=factory,
+                    uuid=self.uuid,
+                    foo=foo, bar=bar,
+                )
+            )
         else:
+            # put back the bar in our stocks
             factory.store(bar=bar)
 
 
 class SellFooBar(TaskMixin):
-    def __init__(self, factory=None):
+    def __init__(self, foobar_sequence=None, factory=None):
         super(SellFooBar, self).__init__(
             time_needed=10.,
             factory=factory
         )
+        self.foobar_sequence = foobar_sequence
 
     @spend_time
     def do_task(self, factory=None):
-        to_sell = []
         factory = factory or self.factory
-        while factory.has_foobar():
-            to_sell.append(factory.get_foobar())
-
-        factory.store(money=len(to_sell))
-        print(
-            "We just sold {} foobars".format(
-                len(stock_to_sell)
-            )
+        factory.store(money=FOOBAR_PRICE * len(self.foobar_sequence))
+        logger.debug(
+            "{} foobars have been sold".format(len(self.foobar_sequence))
         )
-
