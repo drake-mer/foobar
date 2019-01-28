@@ -44,9 +44,6 @@ def protect_with_lock(f):
 class FooBarFactory(object):
     """A thread-safe object for inventory and book-keeping."""
 
-    FOOBAR_PRICE = 1  # euro
-    ROBOT_PRICE = 3   # euro
-
     def __init__(self):
         self.foo_stack = []
         self.bar_stack = []
