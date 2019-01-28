@@ -267,4 +267,3 @@ class FooBarFactory(object):
             time.sleep(10 / TIME_FACTOR)
 
         logger.info("End of the execution")
-        self.log_stock()

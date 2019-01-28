@@ -28,7 +28,7 @@ enough comments.
 
 If you want to make the log really verbose, replace the `'INFO'`
 string by a `'DEBUG'` string in the logging dict config, or conversely
-replace `'INFO'` by `'DEBUG'` if you want all the infos.
+replace `'DEBUG'` by `'INFO'` if you want just the summary.
 
 An interesting setting is the `TIME_FACTOR` constants, that will
 accelerate the time elapsing (set it to 10 to reduce all the waiting
