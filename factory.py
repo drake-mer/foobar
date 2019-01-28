@@ -28,12 +28,14 @@ logger = logging.getLogger(__name__)
 def protect_with_lock(f):
     @functools.wraps(f)
     def wrap(obj, *args, **kwargs):
-        logger.debug("Function %s%s tries to acquire lock", f, args)
+        def log(action=None,):
+            logger.debug("Function %s(**%s) %s", f.__name__, kwargs, action)
+        log(action="is trying to acquire lock")
         obj.lock.acquire(blocking=True)
-        logger.debug("Function %s%s acquired lock", f, args)
+        log(action="has acquired lock")
         res = f(obj, *args, **kwargs)
         obj.lock.release()
-        logger.debug("Function %s%s released lock.", f, args)
+        log(action="has released lock")
         return res
 
     return wrap
